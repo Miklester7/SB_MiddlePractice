@@ -1,226 +1,257 @@
 
 #include <iostream>
-#include <iomanip>
 #include <string>
+#include <vector>
 
-struct Vector
+class Vehicle
 {
 public:
-	Vector(const int X, const int Y, const int Z) : x(X), y(Y), z(Z) {};
+	virtual std::ostream& Print(std::ostream& out) = 0;
 
-	Vector() = delete;
-	int x;
-	int y;
-	int z;
-
-	Vector& operator *(const int& Value)
+	friend std::ostream& operator << (std::ostream& out, Vehicle& object)
 	{
-		x *= Value;
-		y *= Value;
-		z *= Value;
-
-		return *this;
+		return object.Print(out);
 	}
 
-	Vector& operator - (const Vector& vector)
-	{
-		x -= vector.x;
-		y -= vector.y;
-		z -= vector.z;
-
-		return *this;
-	}
-	
-	friend std::istream& operator >> (std::istream& is, Vector& vector)
-	{
-		is >> vector.x >> vector.y >> vector.z;
-		return is;
-	}
+	virtual ~Vehicle() = default;
 };
 
-class Grid
+class WaterVehicle : public Vehicle
 {
 public:
+	WaterVehicle(const float draught) : Draught(draught) {};
 
-	Grid(const int InRow, const int InCol,std::string* Name) : Row(InRow), Col(InCol)
+	virtual std::ostream& Print(std::ostream& out) override
 	{
-		GridName = new std::string(*Name);
-
-		InitArray();
-	};
-
-	Grid(const int Size, std::string* Name) : Row(Size), Col(Size) 
-	{
-		GridName = new std::string(*Name);
-
-		InitArray();
-	};
-
-	Grid(const Grid& grid)
-	{
-		Row = grid.Row;
-		Col = grid.Col;
-
-		GridName = new std::string(*grid.GridName);
-
-		Array2D = new int* [Row];
-		for (int i = 0; i < Row; ++i)
-		{
-			Array2D[i] = new int[Col];
-		}
-
-		for (int i = 0; i < Row; ++i)
-		{
-			for (int j = 0; j < Col; ++j)
-			{
-				Array2D[i][j] = grid.Array2D[i][j];
-			}
-		}
-		if(grid.JustVector)
-		{
-			JustVector = new Vector(*grid.JustVector);
-		}
+		return out <<"Draught: " << Draught << " ";
 	}
 
-	Grid() = delete;
+private:
+	float Draught;
+};
 
-	
-	~Grid()
+struct Point
+{
+public:
+	Point(const float x, const float y, const float z) :X(x), Y(y), Z(z) {};
+
+	void print(std::ostream& out)
 	{
-		delete GridName;
-		
-		if (JustVector) delete JustVector;
-
-		for (int i = 0; i < Row; ++i)
-		{
-			delete[] Array2D[i];
-		}
-
-		delete[] Array2D;
+		out << "x:" << X << " " << "y:" << Y << " " << "z:" << Z << " ";
 	}
 
-	Grid& operator = (const Grid& grid)
+private:
+	float X;
+	float Y;
+	float Z;
+};
+
+class Circle : public Vehicle
+{
+public:
+	Circle(const Point& location, const float diameter) :Diameter(diameter)
 	{
-		Row = grid.Row;
-		Col = grid.Col;
-
-		if (GridName)
-		{
-			delete GridName;
-		}
-		GridName = new std::string(*grid.GridName);
-
-		if (Array2D)
-		{
-			for (int i = 0; i < Row; ++i)
-			{
-				delete[] Array2D[i];
-			}
-
-			delete[] Array2D;
-		}
-
-		Array2D = new int* [Row];
-		for (int i = 0; i < Row; ++i)
-		{
-			Array2D[i] = new int[Col];
-		}
-
-		for (int i = 0; i < Row; ++i)
-		{
-			for (int j = 0; j < Col; ++j)
-			{
-				Array2D[i][j] = grid.Array2D[i][j];
-			}
-		}
-
-		if (grid.JustVector)
-		{
-			if (JustVector) delete JustVector;
-			JustVector = new Vector(*grid.JustVector);
-		}
-		
-		return *this;
+		Location = new Point(location);
 	}
 
-	friend std::ostream& operator <<(std::ostream& out, const Grid& grid)
+	virtual std::ostream& Print(std::ostream& out)
 	{
-		for (int i = 0; i <grid.Row; ++i)
-		{
-			for (int j = 0; j < grid.Col; ++j)
-			{
-				out << std::setw(5) << grid.Array2D[i][j] ;
-			}
+		out << "Circle point: ";
+		Location->print(out);
 
-			out << std::endl;
-		}
+		return out << "Diameter: " << Diameter;
+	}
+
+	~Circle() override
+	{
+		if (Location) delete Location;
+	}
+
+private:
+	Point* Location;
+	float Diameter;
+};
+
+class RoadVehicle : public Vehicle
+{
+public:
+	RoadVehicle() {};
+
+	RoadVehicle(const float clearance) : Clearance(clearance) {};
+
+	virtual std::ostream& Print(std::ostream& out) override
+	{
+		return out << Clearance;
+	}
+
+private:
+	float Clearance{ 0 };
+};
+
+class Wheel
+{
+public:
+	Wheel(const float diameter) : Diameter(diameter) {};
+
+	void Print(std::ostream& out)
+	{
+		out << Diameter << " ";
+	}
+
+private:
+	float Diameter;
+};
+
+class Engine
+{
+public:
+	Engine(float power) : Power(power) {};
+
+	void Print(std::ostream& out)
+	{
+		out << Power << " ";
+	}
+
+	float GetPower() { return Power; }
+private:
+	float Power;
+};
+
+class Bicycle : public RoadVehicle
+{
+public:
+	Bicycle(const Wheel& frontWheel, const Wheel& reartWheel, const float clearance) : RoadVehicle(clearance)
+	{
+		FrontWheel = new Wheel(frontWheel);
+		RearWheel = new Wheel(reartWheel);
+	}
+
+	virtual std::ostream& Print(std::ostream& out) override
+	{
+		out << "Bicycle Wheels: ";
+		FrontWheel->Print(out);
+		RearWheel->Print(out);
+		out << "Ride height: ";
+		RoadVehicle::Print(out);
 
 		return out;
 	}
 
-	void SetVectorValue(const Vector* value)
+	~Bicycle() override
 	{
-		if (JustVector)
-		{
-			delete JustVector;
-		}
-
-		JustVector = new Vector(*value);
+		if (FrontWheel) delete FrontWheel;
+		if (RearWheel) delete RearWheel;
 	}
-
-	const std::string VectorToString()
-	{
-		return JustVector ? "X=" + std::to_string(JustVector->x) + " " +
-			"Y=" + std::to_string(JustVector->y) + " " + "Z=" + std::to_string(JustVector->z) + " " :
-			"Vector is nullptr";
-	}
-
 private:
-	int Row;
-	int Col;
-
-	std::string* GridName;
-	Vector* JustVector = nullptr;
-
-	int** Array2D;
-
-private:
-	void InitArray()
-	{
-		Array2D = new int* [Row];
-		for (int i = 0; i < Row; ++i)
-		{
-			Array2D[i] = new int[Col];
-		}
-
-		for (int i = 0; i < Row; ++i)
-		{
-			for (int j = 0; j < Col; ++j)
-			{
-				Array2D[i][j] = rand() % 20 - 10;
-			}
-		}
-	}
-
-
+	Wheel* FrontWheel;
+	Wheel* RearWheel;
 };
+
+class Car : public RoadVehicle
+{
+public:
+
+	Car(const Engine& carEngine, const Wheel& frontRWheel, const Wheel& frontLWheel,
+		const Wheel& reartRWheel, const Wheel& reartLWheel, const float clearance) : RoadVehicle(clearance)
+	{
+		FrontRWheel = new Wheel(frontRWheel);
+		FrontLWheel = new Wheel(frontLWheel);
+		RearRWheel = new Wheel(reartRWheel);
+		RearLWheel = new Wheel(reartLWheel);
+
+		CarEngine = new Engine(carEngine);
+	}
+
+	virtual std::ostream& Print(std::ostream& out) override
+	{
+		out << "Car Engine: ";
+		CarEngine->Print(out);
+		out << "Wheels: ";
+		FrontRWheel->Print(out);
+		FrontLWheel->Print(out);
+		RearRWheel->Print(out);
+		RearLWheel->Print(out);
+
+		RoadVehicle::Print(out << "Ride height: ");
+
+		return out;
+	}
+
+	float GetPower()
+	{
+		if (CarEngine)
+		{
+			return CarEngine->GetPower();
+		}
+
+		return -1.f;
+	}
+
+	~Car() override
+	{
+		if (FrontRWheel) delete FrontRWheel;
+		if (FrontLWheel) delete FrontLWheel;
+		if (RearRWheel) delete RearRWheel;
+		if (RearLWheel) delete RearLWheel;
+		if (CarEngine) delete CarEngine;
+	}
+private:
+	Wheel* FrontRWheel;
+	Wheel* FrontLWheel;
+	Wheel* RearRWheel;
+	Wheel* RearLWheel;
+
+	Engine* CarEngine;
+	
+};
+
+float getHighestPower(const std::vector<Vehicle*>& vector)
+{
+	float HighestPower = -1.f;
+
+	for (Vehicle* object : vector)
+	{
+		const auto car = dynamic_cast<Car*>(object);
+		if (car)
+		{
+			const float Power = car->GetPower();
+			if (Power > HighestPower) HighestPower = Power;
+		}
+	}
+
+	return HighestPower;
+}
 
 int main()
 {
-	std::string GridName1 = "grid1";
+	Car c(Engine(150), Wheel(17), Wheel(17), Wheel(18), Wheel(18), 150);
+	std::cout << c << '\n';
 
-	Grid grid1(5, &GridName1);
+	Bicycle t(Wheel(15), Wheel(15), 300);
+	std::cout << t << '\n';
 
-	Grid grid2(grid1);
+	std::vector<Vehicle*> v;
 
-	const Vector vector(1, 2, 3);
-	grid2.SetVectorValue(&vector);
+	v.push_back(new Car(Engine(150), Wheel(17), Wheel(17), Wheel(18), Wheel(18), 250));
 
-	Grid grid3 = grid2;
+	v.push_back(new Circle(Point(1, 2, 3), 7));
 
-	std::cout << grid1 <<std::endl<< grid2 << std::endl << grid3;
+	v.push_back(new Car(Engine(200), Wheel(19), Wheel(19), Wheel(19), Wheel(19), 130));
 
-	std::cout << grid1.VectorToString() << std::endl << grid2.VectorToString() << std::endl << grid3.VectorToString() << std::endl;
+	v.push_back(new WaterVehicle(5000));
+
+	for (Vehicle*& object : v)
+	{
+		std::cout << *object << std::endl;
+	}
+
+	std::cout << "The highest power is " << getHighestPower(v) << '\n';
+
+	for (Vehicle*& object : v)
+	{
+		delete object;
+	}
+	v.clear();
 
 	return 0;
 }
